@@ -362,9 +362,9 @@
 		new Audio('assets/audio/0.1.mp3'),
 	];
 
-	AUDIOS[0].replace = 1;
+	AUDIOS[0].loop = 1;
 
-	const height = localStorage['L_KEY'] || "{}";
+	const height = localStorage[L_KEY] || "{}";
 
 	let {level, score} = JSON.parse(height);
 
