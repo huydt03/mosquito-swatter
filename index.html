@@ -78,6 +78,18 @@
 			display: none;
 			position: absolute;
 		}
+		.item-b{
+			position: absolute;
+			z-index: 1;
+		}
+		.coconut{
+			right: 0px;
+			bottom: 0px;
+		}
+		.grass{
+			left: -10px;
+			bottom: 0px;
+		}
 	</style>
 </head>
 <body>
@@ -101,6 +113,8 @@
 </div>
 
 <img src="assets/img/x-icon.png" id="x-icon">
+<img src="assets/img/dua.png" class="item-b coconut">
+<img src="assets/img/co.png" class="item-b grass">
 
 	<script type="text/javascript">
 
@@ -169,6 +183,7 @@
 				target.style.height = size[1] + 'px';
 				target.style.left = position[0] + 'px';
 				target.style.top = position[1] + 'px';
+				target.style['z-index'] = Math.round(Math.random()*2);
 			}
 
 			function asycAction(){
