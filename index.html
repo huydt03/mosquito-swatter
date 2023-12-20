@@ -9,10 +9,13 @@
 		body{
 			    overflow: hidden;
 			    user-select: none;
-			    font-family: cursive;
+			    font-family: monospace;
 			    font-weight: bold;
 			    color: #fff;
+			    position: absolute;
 			    background: url(assets/img/bg0.png);
+			    width: 100%;
+			    height: 100%;
 			    margin: 0;
 		}
 		header{
@@ -71,6 +74,10 @@
 			color: #ffc990;
 			font-size: 1.5em;
 		}
+		#x-icon{
+			display: none;
+			position: absolute;
+		}
 	</style>
 </head>
 <body>
@@ -83,7 +90,7 @@
 
 <div id="game-options">
 	<div class="o-height">
-		<div>Height</div>
+		<div>BEST SCORE</div>
 		<div class="content text">
 			<div>Level: <label id="h_level">1</label></div>
 			<div>Score: <label id="h_score">0</label></div>
@@ -92,6 +99,8 @@
 	<label id="play" class="o-item">Play</label>
 	<label id="options" class="o-item">Options</label>
 </div>
+
+<img src="assets/img/x-icon.png" id="x-icon">
 
 	<script type="text/javascript">
 
@@ -192,17 +201,18 @@
 		){
 			const ITEMS = ['da'];
 
-			const BG = 4;
+			const BG = 4; 
 
 			const OPTIONS = {
 				MAX_LEVEL: 1000,
 				LEVEL: 1,
 				SIZE: 50,
 				SCORE: 0,
-				TIME: 30
+				TIME: 30,
+				TAKE: 5
 			}
 
-			let levels = [];
+			let status = 0;
 
 			let level = OPTIONS.LEVEL;
 
@@ -241,6 +251,7 @@
 			}
 
 			function play(){
+				status = 1;
 				reset();
 				render();
 				updateHandle({level, score});
@@ -249,6 +260,7 @@
 			}
 
 			function end(){
+				status = 0;
 				clear();
 				endHandle({level, score});
 			}
@@ -257,13 +269,12 @@
 				clear();
 
 				i_time = setInterval(function(){
-					if(--self.n_time <= 0)
-						end();
+					--self.n_time
 				}, 1000);
 
 				// render bg
 				let id = Math.round(Math.random()*BG);
-				container.style.background = `url(assets/img/bg${id}.png)`
+				container.style.background = `url(assets/img/bg${id}.png)`;
 
 				// render mosquitos
 				let {size, qualty, speed} = initLevel(level-1);
@@ -302,9 +313,9 @@
 			function init(){
 
 				container.onclick = function(e){
-					if(e.target == container){
-						self.n_time -= 3;
-						clickHandle(0);
+					if(status && e.target == container){
+						self.n_time -= OPTIONS.TAKE;
+						clickHandle(0, e);
 					}
 				}
 
@@ -327,8 +338,10 @@
 					n_time: {
 						get: function(){ return n_time; },
 						set: value=> {
-							if(value <= 0)
+							if(value <= 0){
 								value = 0;
+								end();
+							}
 							n_time = value;
 							updateTimeHandle(n_time);
 						}
@@ -350,6 +363,22 @@
 	let e_score_h = document.getElementById('h_score');
 	let e_play = document.getElementById('play');
 	let e_options = document.getElementById('options');
+	let e_x = document.getElementById('x-icon');
+	let t_x_show;
+
+	let x_hide = function(){
+		e_x.style.display = 'none';
+	}
+
+	let x_show = function(x, y){
+		e_x.style.left = x + 'px';
+		e_x.style.top = y + 'px';
+		e_x.style.display = 'block';
+		clearTimeout(t_x_show);
+		t_x_show = setTimeout(function(){
+			e_x.style.display = 'none';
+		},1000)
+	}
 
 	const L_KEY = 'height';
 
@@ -388,11 +417,15 @@
 		setHeight(level, score);
 	}
 
-	function onClick(e){
-		if(e)
+	function onClick(is_container, event){
+		if(is_container){
 			AUDIOS[1].play();
-		// else
-		// 	AUDIOS[2].play();
+			x_hide();
+		}
+		else{
+			let {clientX, clientY} = event;
+			x_show(clientX - 25, clientY - 25);
+		}
 	}
 
 	function setHeight(_level = 1, _score = 0){
