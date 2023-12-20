@@ -13,7 +13,7 @@
 			    font-weight: bold;
 			    color: #fff;
 			    position: absolute;
-			    background: url(bg0.png);
+			    background: url(assets/img/bg0.png);
 			    width: 100%;
 			    height: 100%;
 			    margin: 0;
@@ -266,7 +266,7 @@
 
 				// render bg
 				let id = Math.round(Math.random()*BG);
-				container.style.background = `url(bg${id}.png)`
+				container.style.background = `url(assets/img/bg${id}.png)`
 
 				// render mosquitos
 				let {size, qualty, speed} = initLevel(level-1);
@@ -357,9 +357,9 @@
 	const L_KEY = 'height';
 
 	const AUDIOS = [
-		new Audio('bg.mp3'),
-		new Audio('1.1.mp3'),
-		new Audio('0.1.mp3'),
+		new Audio('assets/audio/bg.mp3'),
+		new Audio('assets/audio/1.1.mp3'),
+		new Audio('assets/audio/0.1.mp3'),
 	];
 
 	AUDIOS[0].replace = 1;
