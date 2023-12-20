@@ -25,10 +25,16 @@
 			justify-content: space-between;
 			z-index: 2;
 		}
+		.flex{
+			display: flex;
+		}
+		.flex div{
+			width: 100%;
+		}
 		.mosquito{
 			z-index: 1;
 			position: absolute;
-			background: red;
+			/*background: red;*/
 			transition: all .3s ease 0s;
 		}
 
@@ -41,9 +47,6 @@
 			padding: 20px;
     		min-width: 240px;
 			position: absolute;
-		    left: 50%;
-		    top: 50%;
-		    transform: translate(-50%, -50%);
 		    text-align: center;
 		    z-index: 3;
 		    display: flex;
@@ -60,9 +63,6 @@
 		#game-options .o-height{
 			margin-bottom: 30px;
 		}
-		#game-options .o-height .content{
-			display: flex;
-		}
 		#game-options .o-height div{
 			width: 100%;
 		}
@@ -77,6 +77,16 @@
 		#x-icon{
 			display: none;
 			position: absolute;
+			z-index: 1;
+		}
+		.item-a{
+			position: absolute;
+			z-index: 0;
+		}
+		.center, .nuoc{
+		    left: 50%;
+		    top: 50%;
+		    transform: translate(-50%, -50%);
 		}
 		.item-b{
 			position: absolute;
@@ -87,8 +97,15 @@
 			bottom: 0px;
 		}
 		.grass{
-			left: -10px;
+			left: -80px;
 			bottom: 0px;
+		}
+		.nuoc{
+			top: 70%;
+			left: 60%;
+		}
+		.o-options div{
+			margin: 2px;
 		}
 	</style>
 </head>
@@ -100,31 +117,51 @@
 	<div>Score: <label id="score">0</label></div>
 </header>
 
-<div id="game-options">
+<div id="game-options" class="center">
 	<div class="o-height">
 		<div>BEST SCORE</div>
-		<div class="content text">
+		<div class="flex text">
 			<div>Level: <label id="h_level">1</label></div>
 			<div>Score: <label id="h_score">0</label></div>
 		</div>
 	</div>
 	<label id="play" class="o-item">Play</label>
-	<label id="options" class="o-item">Options</label>
+	<label id="options" class="o-item">
+		<div class="flex o-options">
+			<div id="o-sound"><div>Sound</div><div>♫</div></div>
+			<div id="o-effect"><div>Effect</div><div>♪</div></div>
+		</div>
+	</label>
 </div>
 
-<img src="assets/img/x-icon.png" id="x-icon">
 <img src="assets/img/dua.png" class="item-b coconut">
 <img src="assets/img/co.png" class="item-b grass">
+<img src="assets/img/nuoc.png" class="item-a nuoc">
+<img src="assets/img/x-icon.png" id="x-icon">
 
 	<script type="text/javascript">
 
+		function angle(cx, cy, ex, ey) {
+		  var dy = ey - cy;
+		  var dx = ex - cx;
+		  var theta = Math.atan2(dy, dx); // range (-PI, PI]
+		  theta *= 180 / Math.PI; // rads to degs, range (-180, 180]
+		  // if (theta < 0) theta = 360 + theta; // range [0, 360)
+		  return theta;
+		}
+
 		function MosquitoBase(size, position, updateHandle = new Function){
 
-			let self = {size, position};
+			let deg = 0;
+
+			let self = {size, position, deg};
 
 			function init(){
 
 				Object.defineProperties(self, {
+					deg: {
+						get: function(){ return deg; },
+					},
 					size: {
 						get: function(){ return size; },
 						set: function(value){
@@ -134,6 +171,7 @@
 					position: {
 						get: function(){ return position; },
 						set: function(value){
+							deg = angle(position[0], position[1], value[0], value[1]);
 							position = value; updateHandle(self);
 						},
 					}
@@ -147,13 +185,22 @@
 
 		function Mosquito(size = [20, 20], position = [], speed = [200, 1000], clickHandle = new Function){
 
-			let target = document.createElement('label');
+			let target = document.createElement('img');
+
+			target.src = 'assets/img/Mosquito.png';
+
+			let t_action;
 
 			let self = new MosquitoBase(size, position, update);
 
+			function destroy(){
+				target.remove();
+				clearTimeout(t_action);
+			}
+
 			function update(e){
-				let {size, position} = e;
-				updateTarget(size, position);
+				let {size, position, deg} = e;
+				updateTarget(size, position, deg);
 			}
 
 			function action(){
@@ -178,7 +225,8 @@
 				updateTarget(size, position);
 			}
 
-			function updateTarget(size, position){
+			function updateTarget(size, position, deg = 0){
+				target.style.transform = `rotate(${deg}deg)`;
 				target.style.width = size[0] + 'px';
 				target.style.height = size[1] + 'px';
 				target.style.left = position[0] + 'px';
@@ -190,7 +238,8 @@
 				let n_range = speed[1] - speed[0];
 				let n_time = Math.round(Math.random()*n_range) + speed[0];
 				action();
-				setTimeout(asycAction, n_time);
+				clearTimeout(t_action);
+				t_action = setTimeout(asycAction, n_time);
 			}
 
 			function init(){
@@ -199,7 +248,8 @@
 				asycAction();
 
 				Object.defineProperties(self, {
-					target: {get: function(){ return target; }}
+					target: {get: function(){ return target; }},
+					destroy: {get: function(){ return destroy; }}
 				});
 
 			}init();
@@ -252,7 +302,7 @@
 
 			function clear(){
 				for(let i in mosquitos){
-					mosquitos[i].target.remove();
+					mosquitos[i].destroy();
 				}
 				mosquitos = {};
 				clearInterval(i_time);
@@ -260,7 +310,7 @@
 
 			function remove(id){
 				if(!mosquitos[id]) return;
-				mosquitos[id].target.remove();
+				mosquitos[id].destroy();
 				delete mosquitos[id];
 				clickHandle(1);
 			}
@@ -328,7 +378,7 @@
 			function init(){
 
 				container.onclick = function(e){
-					if(status && e.target == container){
+					if(status && !e.target.classList.contains('mosquito')){
 						self.n_time -= OPTIONS.TAKE;
 						clickHandle(0, e);
 					}
@@ -379,6 +429,8 @@
 	let e_play = document.getElementById('play');
 	let e_options = document.getElementById('options');
 	let e_x = document.getElementById('x-icon');
+	let e_sound = document.getElementById('o-sound');
+	let e_effect = document.getElementById('o-effect');
 	let t_x_show;
 
 	let x_hide = function(){
@@ -396,6 +448,7 @@
 	}
 
 	const L_KEY = 'height';
+	const O_KEY = 'options';
 
 	const AUDIOS = [
 		new Audio('assets/audio/bg.mp3'),
@@ -406,11 +459,12 @@
 	AUDIOS[0].loop = 1;
 
 	const height = localStorage[L_KEY] || "{}";
+	const options = localStorage[O_KEY] || "{}";
 
 	let {level, score} = JSON.parse(height);
+	let {sound, effect} = JSON.parse(options);
 
 	function onUpdate({level, score}){
-
 		e_level.innerHTML = level;
 		e_score.innerHTML = score;
 	}
@@ -422,7 +476,8 @@
 	}
 
 	function onPlay(){
-		AUDIOS[0].play();
+		if(sound)
+			AUDIOS[0].play();
 		e_game_options.style.display = 'none';
 	}
 
@@ -434,7 +489,8 @@
 
 	function onClick(is_container, event){
 		if(is_container){
-			AUDIOS[1].play();
+			if(effect)
+				AUDIOS[1].play();
 			x_hide();
 		}
 		else{
@@ -454,10 +510,31 @@
 		e_score_h.innerHTML = score;
 	}
 
+	function setOptions(_sound, _effect){
+		if(_sound)
+			e_sound.style.background = 'green';
+		else
+			e_sound.style.background = '';
+		if(_effect)
+			e_effect.style.background = 'green';
+		else
+			e_effect.style.background = '';
+		sound = _sound;
+		effect = _effect;
+		localStorage.setItem(O_KEY, JSON.stringify({sound, effect}));
+	}
+
 	function init(){
 		let game = new Game(onUpdate, onUpdateTime, onPlay, onEnd, onClick);
 		e_play.onclick = game.play;
 		setHeight();
+		setOptions(sound, effect);
+		e_sound.onclick = function(){
+			setOptions(!sound, effect)
+		}
+		e_effect.onclick = function(){
+			setOptions(sound, !effect)
+		}
 	}init();
 
 })();
