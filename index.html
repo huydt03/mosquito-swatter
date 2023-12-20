@@ -1,0 +1,423 @@
+<!DOCTYPE html>
+<html>
+<head>
+	<meta charset="utf-8">
+	<title></title>
+	<meta name="viewport" 
+      content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=0">
+	<style type="text/css">
+		body{
+			    overflow: hidden;
+			    user-select: none;
+			    font-family: cursive;
+			    font-weight: bold;
+			    color: #fff;
+			    position: absolute;
+			    background: url(bg0.png);
+			    width: 100%;
+			    height: 100%;
+			    margin: 0;
+		}
+		header{
+			padding: 8px;
+			position: relative;
+			display: flex;
+			justify-content: space-between;
+			z-index: 2;
+		}
+		.mosquito{
+			z-index: 1;
+			position: absolute;
+			background: red;
+			transition: all .3s ease 0s;
+		}
+
+		.item{
+			position: relative;
+			z-index: 2;
+		}
+		#game-options{
+			font-size: 1.5em;
+			padding: 20px;
+    		min-width: 240px;
+			position: absolute;
+		    left: 50%;
+		    top: 50%;
+		    transform: translate(-50%, -50%);
+		    text-align: center;
+		    z-index: 3;
+		    display: flex;
+		    flex-direction: column;
+		}
+		#game-options .o-item{
+			cursor: pointer;
+		    padding: 4px;
+		    margin: 8px 0px;
+		    border-radius: 8px;
+		    box-shadow: 0px 0px 10px #ffffff;
+		    background: #fd49018a;
+		}
+		#game-options .o-height{
+			margin-bottom: 30px;
+		}
+		#game-options .o-height .content{
+			display: flex;
+		}
+		#game-options .o-height div{
+			width: 100%;
+		}
+		.text{
+			text-shadow: 1px 1px 5px #000;
+			font-size: 18px;
+		}
+		.text label{
+			color: #ffc990;
+			font-size: 1.5em;
+		}
+	</style>
+</head>
+<body>
+
+<header class="text">
+	<div>Level: <label id="level">1</label></div>
+	<div>Time: <label id="time">1:00</label></div>
+	<div>Score: <label id="score">0</label></div>
+</header>
+
+<div id="game-options">
+	<div class="o-height">
+		<div>Height</div>
+		<div class="content text">
+			<div>Level: <label id="h_level">1</label></div>
+			<div>Score: <label id="h_score">0</label></div>
+		</div>
+	</div>
+	<label id="play" class="o-item">Play</label>
+	<label id="options" class="o-item">Options</label>
+</div>
+
+	<script type="text/javascript">
+
+		function MosquitoBase(size, position, updateHandle = new Function){
+
+			let self = {size, position};
+
+			function init(){
+
+				Object.defineProperties(self, {
+					size: {
+						get: function(){ return size; },
+						set: function(value){
+							size = value; updateHandle(self);
+						},
+					},
+					position: {
+						get: function(){ return position; },
+						set: function(value){
+							position = value; updateHandle(self);
+						},
+					}
+				});
+
+			}init();
+
+			return self;
+
+		}
+
+		function Mosquito(size = [20, 20], position = [], speed = [200, 1000], clickHandle = new Function){
+
+			let target = document.createElement('label');
+
+			let self = new MosquitoBase(size, position, update);
+
+			function update(e){
+				let {size, position} = e;
+				updateTarget(size, position);
+			}
+
+			function action(){
+
+				let app_width = window.innerWidth;
+				let app_height = window.innerHeight;
+
+				let x = Math.round(Math.random() * app_width);
+				let y = Math.round(Math.random() * app_height);
+
+				self.position = [x, y];
+
+			}
+
+			function initTarget(size, position){
+				target.onclick = function(){
+					// target.remove();
+					clickHandle(self);
+				};
+				target.classList.add('mosquito')
+
+				updateTarget(size, position);
+			}
+
+			function updateTarget(size, position){
+				target.style.width = size[0] + 'px';
+				target.style.height = size[1] + 'px';
+				target.style.left = position[0] + 'px';
+				target.style.top = position[1] + 'px';
+			}
+
+			function asycAction(){
+				let n_range = speed[1] - speed[0];
+				let n_time = Math.round(Math.random()*n_range) + speed[0];
+				action();
+				setTimeout(asycAction, n_time);
+			}
+
+			function init(){
+
+				initTarget(size, position);
+				asycAction();
+
+				Object.defineProperties(self, {
+					target: {get: function(){ return target; }}
+				});
+
+			}init();
+
+			return self;
+		}
+
+		function Game(
+			updateHandle = new Function,
+			updateTimeHandle = new Function,
+			playHandle = new Function,
+			endHandle = new Function,
+			clickHandle = new Function,
+		){
+			const ITEMS = ['da'];
+
+			const BG = 4;
+
+			const OPTIONS = {
+				MAX_LEVEL: 1000,
+				LEVEL: 1,
+				SIZE: 50,
+				SCORE: 0,
+				TIME: 30
+			}
+
+			let levels = [];
+
+			let level = OPTIONS.LEVEL;
+
+			let score = OPTIONS.SCORE;
+
+			let n_time = OPTIONS.TIME;
+
+			let mosquitos = {};
+
+			let container = document.body;
+
+			let i_time;
+
+			let self = {};
+
+			function reset(){
+				self.level = OPTIONS.LEVEL;
+				self.score = OPTIONS.SCORE;
+				self.n_time = OPTIONS.TIME;
+				clear();
+			}
+
+			function clear(){
+				for(let i in mosquitos){
+					mosquitos[i].target.remove();
+				}
+				mosquitos = {};
+				clearInterval(i_time);
+			}
+
+			function remove(id){
+				if(!mosquitos[id]) return;
+				mosquitos[id].target.remove();
+				delete mosquitos[id];
+				clickHandle(1);
+			}
+
+			function play(){
+				reset();
+				render();
+				updateHandle({level, score});
+				updateTimeHandle(n_time);
+				playHandle();
+			}
+
+			function end(){
+				clear();
+				endHandle({level, score});
+			}
+
+			function render(){
+				clear();
+
+				i_time = setInterval(function(){
+					if(--self.n_time <= 0)
+						end();
+				}, 1000);
+
+				// render bg
+				let id = Math.round(Math.random()*BG);
+				container.style.background = `url(bg${id}.png)`
+
+				// render mosquitos
+				let {size, qualty, speed} = initLevel(level-1);
+				for(let i = 0; i < qualty; i++){
+
+					let _size = Math.round(Math.random()*size) + size/2;
+
+					mosquitos[i] = new Mosquito([_size, _size], [], speed, function(){
+						remove(i);
+						if(--qualty <= 0){
+							self.level++;
+							self.n_time += OPTIONS.TIME;
+						}
+						self.score++;
+					});
+					container.append(mosquitos[i].target);
+				}
+
+				// render items
+				// for(let i = 0; i < )
+			}
+
+			function initLevel(i){
+				let length = OPTIONS.MAX_LEVEL;
+				let percen = (length - i)/length;
+				let qualty = 2 + i * 0.6;
+				let size = OPTIONS.SIZE * percen;
+				let speed = [500 * percen, 1500 * percen];
+				return {
+					qualty,
+					size,
+					speed
+				}
+			}
+
+			function init(){
+
+				container.onclick = function(e){
+					if(e.target == container){
+						self.n_time -= 3;
+						clickHandle(0);
+					}
+				}
+
+				Object.defineProperties(self, {
+					level: {
+						get: function(){ return level; },
+						set: value=> {
+							level = value;
+							render();
+							updateHandle({level, score});
+						}
+					},
+					score: {
+						get: function(){ return score; },
+						set: value=> {
+							score = value;
+							updateHandle({level, score});
+						}
+					},
+					n_time: {
+						get: function(){ return n_time; },
+						set: value=> {
+							if(value <= 0)
+								value = 0;
+							n_time = value;
+							updateTimeHandle(n_time);
+						}
+					}
+				});
+
+			}init();
+
+			return {play};
+
+		}
+(()=>{
+
+	let e_level = document.getElementById('level');
+	let e_score = document.getElementById('score');
+	let e_time = document.getElementById('time');
+	let e_game_options = document.getElementById('game-options');
+	let e_level_h = document.getElementById('h_level');
+	let e_score_h = document.getElementById('h_score');
+	let e_play = document.getElementById('play');
+	let e_options = document.getElementById('options');
+
+	const L_KEY = 'height';
+
+	const AUDIOS = [
+		new Audio('bg.mp3'),
+		new Audio('1.1.mp3'),
+		new Audio('0.1.mp3'),
+	];
+
+	AUDIOS[0].replace = 1;
+
+	const height = localStorage['L_KEY'] || "{}";
+
+	let {level, score} = JSON.parse(height);
+
+	function onUpdate({level, score}){
+
+		e_level.innerHTML = level;
+		e_score.innerHTML = score;
+	}
+
+	function onUpdateTime(e){
+		let minus = Math.floor(e/60);
+		let sec = e%60;
+		e_time.innerHTML = `${minus}:${sec}`;
+	}
+
+	function onPlay(){
+		AUDIOS[0].play();
+		e_game_options.style.display = 'none';
+	}
+
+	function onEnd({level, score}){
+		AUDIOS[0].pause();
+		e_game_options.style.display = 'flex';
+		setHeight(level, score);
+	}
+
+	function onClick(e){
+		if(e)
+			AUDIOS[1].play();
+		else
+			AUDIOS[2].play();
+	}
+
+	function setHeight(_level = 1, _score = 0){
+		if(!level || _level > level)
+			level = _level;
+		if(!score || _score > score)
+			score = _score;
+
+		localStorage.setItem(L_KEY, JSON.stringify({level, score}));
+		e_level_h.innerHTML = level;
+		e_score_h.innerHTML = score;
+	}
+
+	function init(){
+		let game = new Game(onUpdate, onUpdateTime, onPlay, onEnd, onClick);
+		e_play.onclick = game.play;
+		setHeight();
+	}init();
+
+})();
+
+	</script>
+
+</body>
+</html>
